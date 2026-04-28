@@ -1,17 +1,45 @@
 import numpy as np
 from numpy.typing import NDArray
 
+
 class Solution:
+    def get_derivative(self, model_prediction: NDArray[np.float64], ground_truth: NDArray[np.float64], N: int, X: NDArray[np.float64], desired_weight: int) -> float:
+        # note that N is just len(X)
+        return -2 * np.dot(ground_truth - model_prediction, X[:, desired_weight]) / N
 
     def get_model_prediction(self, X: NDArray[np.float64], weights: NDArray[np.float64]) -> NDArray[np.float64]:
-        # X is (n, m), weights is (m,) -> return (n,) predictions
-        # Round to 5 decimal places
-        out = X @ weights 
-        return np.round(out, 5)
+        return np.squeeze(np.matmul(X, weights))
 
-    def get_error(self, model_prediction: NDArray[np.float64], ground_truth: NDArray[np.float64]) -> float:
-        # Compute mean squared error between predictions and ground truth
-        # Round to 5 decimal places
-        a = 1/ model_prediction.shape[0]
-        out = a * np.sum((model_prediction - ground_truth)**2)
-        return round(out, 5)
+    learning_rate = 0.01
+
+    def train_model(
+        self,
+        X: NDArray[np.float64],
+        Y: NDArray[np.float64],
+        num_iterations: int,
+        initial_weights: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
+        # For each iteration:
+        #   1. Compute predictions with get_model_prediction(X, weights)
+        #   2. For each weight index j, compute gradient with get_derivative()
+        #   3. Update: weights[j] -= learning_rate * gradient
+        # Return np.round(final_weights, 5)
+        
+        N, Embed_Size = X.shape
+        #Embed_size = initial_weights.shape
+        #print(Embed_size.shape)
+        for itr in range(num_iterations):
+            output = self.get_model_prediction(X, initial_weights)
+            #delta = self.get_derivative(output, Y, N, X, Embed_size)
+            gradients = np.zeros_like(initial_weights)
+            for j in range(Embed_Size):
+                gradients[j] = self.get_derivative(
+                    output,
+                    Y,
+                    N,
+                    X,
+                    j
+                )
+            initial_weights = initial_weights - self.learning_rate * gradients
+        return np.round(initial_weights, 5)
+            
